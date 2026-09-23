@@ -6,6 +6,7 @@ import { ProvinceCoveragePanel } from "../components/ProvinceCoveragePanel";
 import { PricingPlansPanel } from "../components/PricingPlansPanel";
 import { ServicesContentPanel } from "../components/ServicesContentPanel";
 import { TrustedClientsPanel } from "../components/TrustedClientsPanel";
+import { TestimonialsPanel } from "../components/TestimonialsPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -91,6 +92,7 @@ export function SectionEditPage() {
   const isPricingSection = blockKey === "pricing";
   const isServicesSection = blockKey === "services";
   const isClientsSection = blockKey === "trusted_clients";
+  const isTestimonialsSection = blockKey === "testimonials";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -102,10 +104,20 @@ export function SectionEditPage() {
         <ArrowLeft className="h-4 w-4" /> Back to {humanize(pageKey)}
       </button>
 
-      <h1 className="text-2xl font-bold text-neutral-900">{humanize(blockKey)}</h1>
-      <p className="mt-1 text-sm text-neutral-500">Changes here go live on the public website as soon as you save.</p>
+      <h1 className="text-2xl font-bold text-neutral-900">
+        {humanize(blockKey)}
+      </h1>
+      <p className="mt-1 text-sm text-neutral-500">
+        Changes here go live on the public website as soon as you save.
+      </p>
 
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
 
       {loading ? (
         <p className="mt-6 text-sm text-neutral-400">Loading...</p>
@@ -118,18 +130,29 @@ export function SectionEditPage() {
           ) : (
             <div className="mt-6 flex flex-col gap-4">
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </div>
               )}
 
               {fields.map((field) => (
-                <div key={field.block_key} className="rounded-2xl border border-black/10 bg-white p-5">
-                  <p className="text-sm font-bold text-neutral-800">{field.label}</p>
+                <div
+                  key={field.block_key}
+                  className="rounded-2xl border border-black/10 bg-white p-5"
+                >
+                  <p className="text-sm font-bold text-neutral-800">
+                    {field.label}
+                  </p>
 
                   {field.block_type === "image" ? (
                     <div className="mt-3 flex items-center gap-4">
                       {field.image_url && (
                         <img
-                          src={field.image_url.startsWith("http") ? field.image_url : `${API_URL}${field.image_url}`}
+                          src={
+                            field.image_url.startsWith("http")
+                              ? field.image_url
+                              : `${API_URL}${field.image_url}`
+                          }
                           alt=""
                           className="h-20 w-32 rounded-lg object-cover"
                         />
@@ -149,14 +172,26 @@ export function SectionEditPage() {
                           <textarea
                             rows={3}
                             value={field.value_en || ""}
-                            onChange={(e) => updateField(field.block_key, "value_en", e.target.value)}
+                            onChange={(e) =>
+                              updateField(
+                                field.block_key,
+                                "value_en",
+                                e.target.value,
+                              )
+                            }
                             placeholder="English"
                             className="resize-none rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
                           />
                           <textarea
                             rows={3}
                             value={field.value_km || ""}
-                            onChange={(e) => updateField(field.block_key, "value_km", e.target.value)}
+                            onChange={(e) =>
+                              updateField(
+                                field.block_key,
+                                "value_km",
+                                e.target.value,
+                              )
+                            }
                             placeholder="Khmer"
                             className="resize-none rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
                           />
@@ -165,13 +200,25 @@ export function SectionEditPage() {
                         <>
                           <input
                             value={field.value_en || ""}
-                            onChange={(e) => updateField(field.block_key, "value_en", e.target.value)}
+                            onChange={(e) =>
+                              updateField(
+                                field.block_key,
+                                "value_en",
+                                e.target.value,
+                              )
+                            }
                             placeholder="English"
                             className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
                           />
                           <input
                             value={field.value_km || ""}
-                            onChange={(e) => updateField(field.block_key, "value_km", e.target.value)}
+                            onChange={(e) =>
+                              updateField(
+                                field.block_key,
+                                "value_km",
+                                e.target.value,
+                              )
+                            }
                             placeholder="Khmer"
                             className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
                           />
@@ -183,7 +230,11 @@ export function SectionEditPage() {
               ))}
 
               <div className="flex items-center justify-end gap-3 border-t border-black/10 pt-4">
-                {saved && <span className="text-sm font-semibold text-green-600">Saved ✓</span>}
+                {saved && (
+                  <span className="text-sm font-semibold text-green-600">
+                    Saved ✓
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={handleSave}
@@ -217,6 +268,12 @@ export function SectionEditPage() {
           {isClientsSection && (
             <div className="mt-6">
               <TrustedClientsPanel />
+            </div>
+          )}
+
+          {isTestimonialsSection && (
+            <div className="mt-6">
+              <TestimonialsPanel />
             </div>
           )}
         </>

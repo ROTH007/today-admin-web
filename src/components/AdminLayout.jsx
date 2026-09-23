@@ -27,9 +27,13 @@ export function AdminLayout() {
     <div className="flex min-h-screen bg-neutral-50">
       <aside className="flex w-64 shrink-0 flex-col border-r border-black/10 bg-white">
         <div className="flex items-center gap-2.5 px-5 py-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-primary)] text-sm font-black text-white">
-            T
-          </span>
+          <img
+            src="/images/today-logo.png"
+            alt="TODAY Internet"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 object-contain"
+          />
           <div className="leading-tight">
             <p className="text-base font-extrabold text-neutral-900">TODAY Admin</p>
             <p className="text-[11px] font-medium text-neutral-400">Content Management</p>
