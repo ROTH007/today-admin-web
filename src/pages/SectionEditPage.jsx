@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Calendar, Newspaper, Upload } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ProvinceCoveragePanel } from "../components/ProvinceCoveragePanel";
 import { PricingPlansPanel } from "../components/PricingPlansPanel";
@@ -8,6 +8,10 @@ import { ServicesContentPanel } from "../components/ServicesContentPanel";
 import { TrustedClientsPanel } from "../components/TrustedClientsPanel";
 import { TestimonialsPanel } from "../components/TestimonialsPanel";
 import { CareerOpeningsPanel } from "../components/CareerOpeningsPanel";
+import { NewsArticlesPanel } from "../components/NewsArticlesPanel";
+import { EventsPanel } from "../components/EventsPanel";
+import { ContactInfoPanel } from "../components/ContactInfoPanel";
+import { Loader } from "../components/Loader";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -95,7 +99,8 @@ export function SectionEditPage() {
   const isClientsSection = blockKey === "trusted_clients";
   const isTestimonialsSection = blockKey === "testimonials";
   const isOpeningsSection = pageKey === "career" && blockKey === "openings";
-  const isNewsEventsSection = pageKey === "home" && blockKey === "news_events";
+  const isBlogContentSection = pageKey === "blog" && blockKey === "content";
+  const isContactInfoSection = pageKey === "contact" && blockKey === "info";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -123,7 +128,7 @@ export function SectionEditPage() {
       />
 
       {loading ? (
-        <p className="mt-6 text-sm text-neutral-400">Loading...</p>
+        <Loader className="mt-6" />
       ) : (
         <>
           {fields.length === 0 ? (
@@ -286,34 +291,20 @@ export function SectionEditPage() {
             </div>
           )}
 
-          {isNewsEventsSection && (
-            <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
-              <p className="text-sm font-bold text-neutral-800">
-                Manage the individual cards shown in this section
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                The heading and subtitle above control this section's title
-                only. To add, edit, publish, or delete the actual news
-                articles and events that appear as cards, use the pages
-                below — publishing an article or event there makes it show
-                up here automatically.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/news")}
-                  className="flex items-center gap-1.5 rounded-lg border border-black/15 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-                >
-                  <Newspaper className="h-4 w-4" /> Manage News & Articles
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/events")}
-                  className="flex items-center gap-1.5 rounded-lg border border-black/15 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-                >
-                  <Calendar className="h-4 w-4" /> Manage Events & Booths
-                </button>
+          {isBlogContentSection && (
+            <div className="mt-6 flex flex-col gap-6">
+              <div className="rounded-2xl border border-black/10 bg-white p-5">
+                <NewsArticlesPanel />
               </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-5">
+                <EventsPanel />
+              </div>
+            </div>
+          )}
+
+          {isContactInfoSection && (
+            <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
+              <ContactInfoPanel />
             </div>
           )}
         </>

@@ -5,8 +5,8 @@ import { PageBlocksPanel } from "../components/PageBlocksPanel";
 const PAGE_LABELS = {
   home: "Home",
   "business-solutions": "Business Solutions",
-  "our-solution": "Our Solution",
-  blog: "Blog",
+  "our-solution": "Residential Services",
+  blog: "Content (News & Events)",
   career: "Career",
   about: "About Us",
   contact: "Contact Us",

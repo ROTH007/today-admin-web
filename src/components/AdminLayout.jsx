@@ -1,6 +1,9 @@
-import { Bell, Calendar, FileText, History, LayoutDashboard, LogOut, Newspaper, Search, Users } from "lucide-react";
+import { useRef, useState } from "react";
+import { Bell, Calendar, Camera, FileText, History, LayoutDashboard, LogOut, Newspaper, Search, Users } from "lucide-react";
 import { NavLink, Outlet } from "react-router";
 import { useAuth } from "../context/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -11,6 +14,9 @@ const NAV_ITEMS = [
   { to: "/users", label: "User Management", icon: Users, roles: ["super_admin", "admin"] },
 ];
 
+const LOGO_URL =
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTizyoPmRKt_aZ9fkqmrSYni4eBEACPvoEl5w94FmOJL6HBQmGMxyKEHNM&s=10";
+
 function initials(name = "") {
   return name
     .split(" ")
@@ -20,16 +26,81 @@ function initials(name = "") {
     .toUpperCase();
 }
 
+// Small avatar that shows the user's real photo once they've set one,
+// falling back to their initials on a soft brand-colored circle.
+function Avatar({ user, size = "h-9 w-9" }) {
+  if (user?.avatar_url) {
+    return (
+      <img
+        src={user.avatar_url}
+        alt={user.name || "User"}
+        className={`${size} shrink-0 rounded-full object-cover`}
+      />
+    );
+  }
+  return (
+    <span
+      className={`flex ${size} shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-xs font-bold text-[var(--color-primary)]`}
+    >
+      {initials(user?.name)}
+    </span>
+  );
+}
+
 export function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, token, logout, refreshUser } = useAuth();
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const triggerUpload = () => fileInputRef.current?.click();
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ""; // allow picking the same file again later
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch(`${API_URL}/uploads-api`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
+
+      const saveRes = await fetch(`${API_URL}/users/me/avatar`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatar_url: uploadData.url }),
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) throw new Error(saveData.error || "Could not save your photo");
+
+      await refreshUser();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
       <aside className="flex w-64 shrink-0 flex-col border-r border-black/10 bg-white">
         <div className="flex items-center gap-2.5 px-5 py-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-primary)] text-sm font-black text-white">
-            T
-          </span>
+          <img
+            src={LOGO_URL}
+            alt="TODAY Admin"
+            className="h-9 w-9 shrink-0 rounded-xl object-cover"
+          />
           <div className="leading-tight">
             <p className="text-base font-extrabold text-neutral-900">TODAY Admin</p>
             <p className="text-[11px] font-medium text-neutral-400">Content Management</p>
@@ -59,15 +130,36 @@ export function AdminLayout() {
         </nav>
 
         <div className="border-t border-black/10 p-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-xs font-bold text-[var(--color-primary)]">
-              {initials(user?.name)}
-            </span>
+            <button
+              type="button"
+              onClick={triggerUpload}
+              disabled={uploading}
+              className="group relative shrink-0 rounded-full disabled:opacity-60"
+              title="Change profile picture"
+            >
+              <Avatar user={user} />
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-white opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100">
+                <Camera className="h-4 w-4" />
+              </span>
+            </button>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-neutral-800">{user?.name}</p>
               <p className="truncate text-xs capitalize text-neutral-400">{user?.role?.replace("_", " ")}</p>
             </div>
           </div>
+
+          {uploading && <p className="mt-2 text-xs text-neutral-400">Uploading photo...</p>}
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+
           <button
             type="button"
             onClick={logout}
@@ -92,9 +184,7 @@ export function AdminLayout() {
             >
               <Bell className="h-[18px] w-[18px]" />
             </button>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-xs font-bold text-[var(--color-primary)]">
-              {initials(user?.name)}
-            </span>
+            <Avatar user={user} />
           </div>
         </header>
 

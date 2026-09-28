@@ -8,25 +8,29 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("admin_token"));
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  const loadMe = (activeToken) =>
     fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${activeToken}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Session expired");
         return res.json();
       })
-      .then((data) => setUser(data.user))
+      .then((data) => setUser(data.user));
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    loadMe(token)
       .catch(() => {
         localStorage.removeItem("admin_token");
         setToken(null);
         setUser(null);
       })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const login = async (email, password) => {
@@ -50,6 +54,18 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // Re-fetches the current user (name/role/avatar) without a full re-login.
+  // Call this after anything that changes your own account, like a new
+  // profile picture.
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      await loadMe(token);
+    } catch {
+      // ignore — the next authenticated request will surface any real problem
+    }
+  };
+
   // Small helper other pages use for authenticated API calls.
   const apiFetch = async (path, options = {}) => {
     const res = await fetch(`${API_URL}${path}`, {
@@ -68,7 +84,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, apiFetch }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, apiFetch, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
