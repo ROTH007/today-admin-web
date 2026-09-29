@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Eye, EyeOff, FileText, Package, Plus, Trash2, Upload, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
+// Mirrors ServicesContentPanel.jsx exactly, but talks to
+// /residential-services-content -- a completely separate admin panel for
+// a completely separate table. No category prop, no shared state with
+// Business Solutions at all.
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 function resolveImg(url) {
@@ -112,7 +117,7 @@ function PackageEditor({ pkg, onFieldChange, onSpeedsChange, onAddFeature, onFea
             className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
           />
           <input
-            placeholder="Subtitle (EN) — e.g. Ideal for Small Businesses"
+            placeholder="Subtitle (EN) — e.g. Ideal for Everyday Streaming"
             value={pkg.subtitle_en || ""}
             onChange={(e) => onFieldChange("subtitle_en", e.target.value)}
             className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
@@ -124,7 +129,7 @@ function PackageEditor({ pkg, onFieldChange, onSpeedsChange, onAddFeature, onFea
             className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
           />
           <input
-            placeholder="Badge Text (EN) — e.g. STAY CONNECTED. STAY AHEAD."
+            placeholder="Badge Text (EN)"
             value={pkg.badge_en || ""}
             onChange={(e) => onFieldChange("badge_en", e.target.value)}
             className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
@@ -137,11 +142,11 @@ function PackageEditor({ pkg, onFieldChange, onSpeedsChange, onAddFeature, onFea
           />
 
           <label className="flex flex-col gap-1 text-xs font-semibold text-neutral-600 sm:col-span-2">
-            Speeds <span className="font-normal text-neutral-400">comma-separated, e.g. 100Mbps, 150Mbps, 200Mbps</span>
+            Speeds <span className="font-normal text-neutral-400">comma-separated, e.g. 35Mbps, 45Mbps, 55Mbps</span>
             <input
               value={speedsText}
               onChange={(e) => onSpeedsChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
-              placeholder="100Mbps, 150Mbps, 200Mbps"
+              placeholder="35Mbps, 45Mbps, 55Mbps"
               className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
             />
           </label>
@@ -162,7 +167,7 @@ function PackageEditor({ pkg, onFieldChange, onSpeedsChange, onAddFeature, onFea
               {features.map((f, fi) => (
                 <div key={fi} className="flex items-center gap-1.5">
                   <input
-                    placeholder="Feature (EN) — e.g. High-Speed Internet"
+                    placeholder="Feature (EN)"
                     value={f.en || ""}
                     onChange={(e) => onFeatureChange(fi, "en", e.target.value)}
                     className="flex-1 rounded-lg border border-black/15 px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
@@ -204,7 +209,7 @@ function DetailPageEditor({
         <FileText className="h-4 w-4" /> Detail Page Content
       </div>
       <p className="mt-1 text-xs text-neutral-500">
-        This is what shows on the service's own page (e.g. /business-solutions/{service.static_id || service.id}) when someone clicks into it.
+        This is what shows on the service's own page (e.g. /residential-services/{service.static_id || service.id}) when someone clicks into it.
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -337,7 +342,7 @@ function DetailPageEditor({
             <input
               value={service.detail_packages_heading_en || ""}
               onChange={(e) => onDetailFieldChange("detail_packages_heading_en", e.target.value)}
-              placeholder="Choose The Right Package For Your Business"
+              placeholder="Choose The Right Package For Your Home"
               className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
             />
           </label>
@@ -520,7 +525,7 @@ function ServiceRow({ service, expanded, onToggleExpand, onToggleVisible, onFiel
         <div className="border-t border-black/5 px-4 py-4">
           {!deletable && (
             <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              This is one of the original 6 services with its own detail page — it can be edited but not deleted.
+              This is one of the original Residential services with its own detail page — it can be edited but not deleted.
             </p>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -614,9 +619,12 @@ function ServiceRow({ service, expanded, onToggleExpand, onToggleVisible, onFiel
   );
 }
 
-const ORIGINAL_SIX = ["bbi", "dia", "xedge", "vpn", "darkfiber"];
+// The two original Residential services that have their own detail page —
+// editable but not deletable. Nothing to do with Business Solutions'
+// ORIGINAL_SIX; this panel talks to a completely separate table.
+const ORIGINAL_RESIDENTIAL = ["fiberx", "today-wifi"];
 
-export function ServicesContentPanel() {
+export function ResidentialServicesContentPanel() {
   const { apiFetch, token } = useAuth();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -626,7 +634,7 @@ export function ServicesContentPanel() {
   const [visSavingId, setVisSavingId] = useState(null);
 
   const load = () => {
-    apiFetch("/services-content")
+    apiFetch("/residential-services-content")
       .then((data) => setServices(data.services))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -642,7 +650,7 @@ export function ServicesContentPanel() {
     setVisSavingId(service.id);
     setError("");
     try {
-      const data = await apiFetch(`/services-content/${service.id}/visibility`, {
+      const data = await apiFetch(`/residential-services-content/${service.id}/visibility`, {
         method: "PATCH",
         body: JSON.stringify({ is_visible: !service.is_visible }),
       });
@@ -658,7 +666,7 @@ export function ServicesContentPanel() {
     setSavingId(service.id);
     setError("");
     try {
-      const data = await apiFetch(`/services-content/${service.id}`, { method: "PUT", body: JSON.stringify(service) });
+      const data = await apiFetch(`/residential-services-content/${service.id}`, { method: "PUT", body: JSON.stringify(service) });
       updateLocal(service.id, data.service);
     } catch (err) {
       setError(err.message);
@@ -670,7 +678,7 @@ export function ServicesContentPanel() {
   const addService = async () => {
     setError("");
     try {
-      const data = await apiFetch("/services-content", { method: "POST", body: JSON.stringify({ ...BLANK_SERVICE, ...BLANK_DETAIL, detail_benefits: [], detail_packages: [] }) });
+      const data = await apiFetch("/residential-services-content", { method: "POST", body: JSON.stringify({ ...BLANK_SERVICE, ...BLANK_DETAIL, detail_benefits: [], detail_packages: [] }) });
       setServices((prev) => [...prev, data.service]);
       setExpandedId(data.service.id);
     } catch (err) {
@@ -681,7 +689,7 @@ export function ServicesContentPanel() {
   const remove = async (service) => {
     if (!confirm(`Delete "${service.name_en}"? This can't be undone.`)) return;
     try {
-      await apiFetch(`/services-content/${service.id}`, { method: "DELETE" });
+      await apiFetch(`/residential-services-content/${service.id}`, { method: "DELETE" });
       setServices((prev) => prev.filter((s) => s.id !== service.id));
     } catch (err) {
       setError(err.message);
@@ -694,7 +702,7 @@ export function ServicesContentPanel() {
     <div className="rounded-2xl border border-black/10 bg-neutral-50 p-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-bold text-neutral-900">Business Service Cards</h2>
+          <h2 className="text-sm font-bold text-neutral-900">Residential Service Cards</h2>
           <p className="mt-0.5 text-xs text-neutral-500">
             Services with their own detail page (marked below) can be edited but not deleted. New ones you add link to "Link URL" below (defaults to Contact Us).
           </p>
@@ -723,7 +731,7 @@ export function ServicesContentPanel() {
             onDelete={() => remove(service)}
             saving={savingId === service.id}
             visSaving={visSavingId === service.id}
-            deletable={!ORIGINAL_SIX.includes(service.id) && !ORIGINAL_SIX.includes(service.static_id)}
+            deletable={!ORIGINAL_RESIDENTIAL.includes(service.id) && !ORIGINAL_RESIDENTIAL.includes(service.static_id)}
             token={token}
           />
         ))}

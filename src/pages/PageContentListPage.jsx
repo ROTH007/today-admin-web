@@ -25,7 +25,7 @@ const PUBLIC_SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || "http://localhos
 const PAGE_META = {
   home: { icon: HomeIcon, path: "/" },
   "business-solutions": { icon: Layers, path: "/business-solutions" },
-  "our-solution": { icon: Building2, path: "/our-solution" },
+  "our-solution": { icon: Building2, path: "/residential-services" },
   blog: { icon: Newspaper, path: "/blog" },
   career: { icon: Briefcase, path: "/career" },
   about: { icon: Users, path: "/about" },

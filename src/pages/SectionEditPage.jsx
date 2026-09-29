@@ -5,7 +5,10 @@ import { useAuth } from "../context/AuthContext";
 import { ProvinceCoveragePanel } from "../components/ProvinceCoveragePanel";
 import { PricingPlansPanel } from "../components/PricingPlansPanel";
 import { ServicesContentPanel } from "../components/ServicesContentPanel";
+import { ResidentialServicesContentPanel } from "../components/ResidentialServicesContentPanel";
 import { TrustedClientsPanel } from "../components/TrustedClientsPanel";
+import { AwardsPanel } from "../components/AwardsPanel";
+import { FoundationPostsPanel } from "../components/FoundationPostsPanel";
 import { TestimonialsPanel } from "../components/TestimonialsPanel";
 import { CareerOpeningsPanel } from "../components/CareerOpeningsPanel";
 import { NewsArticlesPanel } from "../components/NewsArticlesPanel";
@@ -97,10 +100,17 @@ export function SectionEditPage() {
   const isPricingSection = blockKey === "pricing";
   const isServicesSection = blockKey === "services";
   const isClientsSection = blockKey === "trusted_clients";
+  const isAwardsSection = pageKey === "about" && blockKey === "awards";
+  const isFoundationSection = pageKey === "blog" && blockKey === "foundation";
   const isTestimonialsSection = blockKey === "testimonials";
   const isOpeningsSection = pageKey === "career" && blockKey === "openings";
   const isBlogContentSection = pageKey === "blog" && blockKey === "content";
   const isContactInfoSection = pageKey === "contact" && blockKey === "info";
+  // The "Services" section shows on two pages — Business Solutions and
+  // Residential Service — but each edits a completely separate table now,
+  // so which panel renders depends on which page you're in.
+  const isResidentialServicesSection = isServicesSection && pageKey === "our-solution";
+  const isBusinessServicesSection = isServicesSection && pageKey !== "our-solution";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -267,15 +277,33 @@ export function SectionEditPage() {
             </div>
           )}
 
-          {isServicesSection && (
+          {isBusinessServicesSection && (
             <div className="mt-6">
               <ServicesContentPanel />
+            </div>
+          )}
+
+          {isResidentialServicesSection && (
+            <div className="mt-6">
+              <ResidentialServicesContentPanel />
             </div>
           )}
 
           {isClientsSection && (
             <div className="mt-6">
               <TrustedClientsPanel />
+            </div>
+          )}
+
+          {isAwardsSection && (
+            <div className="mt-6">
+              <AwardsPanel />
+            </div>
+          )}
+
+          {isFoundationSection && (
+            <div className="mt-6">
+              <FoundationPostsPanel />
             </div>
           )}
 
