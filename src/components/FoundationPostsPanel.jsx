@@ -3,9 +3,9 @@ import { ChevronDown, Eye, EyeOff, Plus, Trash2, Upload, X } from "lucide-react"
 import { useAuth } from "../context/AuthContext";
 
 // Facebook-post-style admin panel: each post holds a caption (EN/KM), an
-// optional date, and a freely-add/removable list of photos. Mirrors the
-// Awards/Trusted Clients upload pattern, extended to multiple images per
-// item instead of one.
+// optional date, an optional link (e.g. to a Facebook post or article), and
+// a freely-add/removable list of photos. Mirrors the Awards/Trusted Clients
+// upload pattern, extended to multiple images per item instead of one.
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -73,15 +73,27 @@ function PostFields({ form, setForm, uploading, onUpload }) {
         </label>
       </div>
 
-      <label className="flex max-w-xs flex-col gap-1 text-xs font-semibold text-neutral-600">
-        Date <span className="font-normal text-neutral-400">optional</span>
-        <input
-          type="date"
-          value={form.post_date ? form.post_date.slice(0, 10) : ""}
-          onChange={(e) => setForm((f) => ({ ...f, post_date: e.target.value }))}
-          className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-        />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-xs font-semibold text-neutral-600">
+          Date <span className="font-normal text-neutral-400">optional</span>
+          <input
+            type="date"
+            value={form.post_date ? form.post_date.slice(0, 10) : ""}
+            onChange={(e) => setForm((f) => ({ ...f, post_date: e.target.value }))}
+            className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-neutral-600">
+          Link URL <span className="font-normal text-neutral-400">optional — Facebook post, article, etc.</span>
+          <input
+            type="url"
+            value={form.link_url || ""}
+            onChange={(e) => setForm((f) => ({ ...f, link_url: e.target.value }))}
+            placeholder="https://facebook.com/..."
+            className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+          />
+        </label>
+      </div>
 
       <PhotoUploader
         images={form.images}
@@ -187,7 +199,7 @@ function PostCard({ post, expanded, onToggleExpand, onToggleVisible, onDelete, o
 }
 
 function AddPostForm({ onCancel, onAdd, token }) {
-  const [form, setForm] = useState({ caption_en: "", caption_km: "", post_date: "", images: [] });
+  const [form, setForm] = useState({ caption_en: "", caption_km: "", post_date: "", link_url: "", images: [] });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -297,7 +309,7 @@ export function FoundationPostsPanel() {
         <div>
           <h2 className="text-sm font-bold text-neutral-900">TODAY Foundation Posts</h2>
           <p className="mt-0.5 text-xs text-neutral-500">
-            {posts.length} post{posts.length === 1 ? "" : "s"}. Each post can hold multiple photos, shown as a Facebook-style feed on the News & Events page.
+            {posts.length} post{posts.length === 1 ? "" : "s"}. Each post can hold multiple photos and an optional link, shown as a Facebook-style feed on the News & Events page.
           </p>
         </div>
         <button
