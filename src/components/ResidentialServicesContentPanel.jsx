@@ -209,7 +209,7 @@ function DetailPageEditor({
         <FileText className="h-4 w-4" /> Detail Page Content
       </div>
       <p className="mt-1 text-xs text-neutral-500">
-        This is what shows on the service's own page (e.g. /residential-services/{service.static_id || service.id}) when someone clicks into it.
+       This is what shows on the service's own page — Fiber X shows it directly at /residential-services too, other services at /residential-services/{service.static_id || service.id}.
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">

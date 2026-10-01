@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, Video } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ProvinceCoveragePanel } from "../components/ProvinceCoveragePanel";
 import { PricingPlansPanel } from "../components/PricingPlansPanel";
@@ -14,6 +14,7 @@ import { CareerOpeningsPanel } from "../components/CareerOpeningsPanel";
 import { NewsArticlesPanel } from "../components/NewsArticlesPanel";
 import { EventsPanel } from "../components/EventsPanel";
 import { ContactInfoPanel } from "../components/ContactInfoPanel";
+import { SocialLinksPanel } from "../components/SocialLinksPanel";
 import { Loader } from "../components/Loader";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -22,11 +23,24 @@ function humanize(key) {
   return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
 }
 
+// True for a YouTube/Vimeo page link, which needs an <iframe> embed rather
+// than a native <video> tag. A direct uploaded file (Cloudinary .mp4 etc.)
+// plays fine in <video> and doesn't match this.
+function toEmbedUrl(url) {
+  if (!url) return null;
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  const vimeo = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
+  return null;
+}
+
 export function SectionEditPage() {
   const { pageKey, blockKey } = useParams();
   const { apiFetch, token } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const uploadingForRef = useRef(null);
 
   const [fields, setFields] = useState([]);
@@ -34,6 +48,7 @@ export function SectionEditPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [videoUploading, setVideoUploading] = useState(false);
 
   useEffect(() => {
     apiFetch(`/page-content/${pageKey}`)
@@ -73,6 +88,36 @@ export function SectionEditPage() {
     }
   };
 
+  const triggerVideoUpload = (fieldKey) => {
+    uploadingForRef.current = fieldKey;
+    videoInputRef.current?.click();
+  };
+
+  const handleVideoFileChange = async (e) => {
+    const file = e.target.files[0];
+    const fieldKey = uploadingForRef.current;
+    if (!file || !fieldKey) return;
+    setVideoUploading(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_URL}/uploads-api/video`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Video upload failed");
+      updateField(fieldKey, "image_url", data.url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVideoUploading(false);
+      e.target.value = "";
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError("");
@@ -106,6 +151,7 @@ export function SectionEditPage() {
   const isOpeningsSection = pageKey === "career" && blockKey === "openings";
   const isBlogContentSection = pageKey === "blog" && blockKey === "content";
   const isContactInfoSection = pageKey === "contact" && blockKey === "info";
+  const isSocialLinksSection = pageKey === "contact" && blockKey === "social";
   // The "Services" section shows on two pages — Business Solutions and
   // Residential Service — but each edits a completely separate table now,
   // so which panel renders depends on which page you're in.
@@ -136,6 +182,13 @@ export function SectionEditPage() {
         className="hidden"
         onChange={handleFileChange}
       />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={handleVideoFileChange}
+      />
 
       {loading ? (
         <Loader className="mt-6" />
@@ -162,7 +215,48 @@ export function SectionEditPage() {
                     {field.label}
                   </p>
 
-                  {field.block_type === "image" ? (
+                  {field.block_key.endsWith("_video_url") ? (
+                    <div className="mt-3 flex flex-col gap-3">
+                      {field.image_url ? (
+                        toEmbedUrl(field.image_url) ? (
+                          <iframe
+                            src={toEmbedUrl(field.image_url)}
+                            title={field.label}
+                            className="aspect-video w-full max-w-md rounded-lg border border-black/10"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video
+                            src={field.image_url}
+                            controls
+                            className="aspect-video w-full max-w-md rounded-lg border border-black/10 bg-black"
+                          />
+                        )
+                      ) : (
+                        <div className="flex aspect-video w-full max-w-md items-center justify-center rounded-lg border border-dashed border-black/15 bg-neutral-50 text-xs text-neutral-400">
+                          No video set yet
+                        </div>
+                      )}
+
+                      <input
+                        value={field.image_url || ""}
+                        onChange={(e) => updateField(field.block_key, "image_url", e.target.value)}
+                        placeholder="Paste a YouTube, Vimeo, or direct video URL"
+                        className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => triggerVideoUpload(field.block_key)}
+                        disabled={videoUploading}
+                        className="flex w-fit items-center gap-1.5 rounded-lg border border-black/15 px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-60"
+                      >
+                        <Video className="h-4 w-4" />
+                        {videoUploading ? "Uploading..." : "Upload Video File (max 50MB)"}
+                      </button>
+                    </div>
+                  ) : field.block_type === "image" ? (
                     <div className="mt-3 flex items-center gap-4">
                       {field.image_url && (
                         <img
@@ -333,6 +427,12 @@ export function SectionEditPage() {
           {isContactInfoSection && (
             <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
               <ContactInfoPanel />
+            </div>
+          )}
+
+          {isSocialLinksSection && (
+            <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
+              <SocialLinksPanel />
             </div>
           )}
         </>
