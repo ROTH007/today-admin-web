@@ -35,13 +35,23 @@ function toEmbedUrl(url) {
   return null;
 }
 
-// Fixed two-option toggle used only by the "network_coverage_map_mode"
-// field -- it's stored as a plain text block ("3d" | "image") but needs a
-// radio-button UI instead of the generic EN/KM text inputs.
-const MAP_MODE_OPTIONS = [
-  { value: "3d", label: "3D Map (interactive)" },
-  { value: "image", label: "Upload Image" },
-];
+// Fixed two-option toggles rendered as radio buttons instead of the
+// generic EN/KM text inputs. Each is a plain text block under the hood
+// (value_en holds the selected option's value, e.g. "3d" / "video").
+const MODE_TOGGLE_FIELDS = {
+  network_coverage_map_mode: {
+    options: [
+      { value: "3d", label: "3D Map (interactive)" },
+      { value: "image", label: "Upload Image" },
+    ],
+  },
+  network_topology_media_mode: {
+    options: [
+      { value: "video", label: "Video" },
+      { value: "image", label: "Image" },
+    ],
+  },
+};
 
 export function SectionEditPage() {
   const { pageKey, blockKey } = useParams();
@@ -214,169 +224,172 @@ export function SectionEditPage() {
                 </div>
               )}
 
-              {fields.map((field) => (
-                <div
-                  key={field.block_key}
-                  className="rounded-2xl border border-black/10 bg-white p-5"
-                >
-                  <p className="text-sm font-bold text-neutral-800">
-                    {field.label}
-                  </p>
+              {fields.map((field) => {
+                const modeToggle = MODE_TOGGLE_FIELDS[field.block_key];
+                return (
+                  <div
+                    key={field.block_key}
+                    className="rounded-2xl border border-black/10 bg-white p-5"
+                  >
+                    <p className="text-sm font-bold text-neutral-800">
+                      {field.label}
+                    </p>
 
-                  {field.block_key === "network_coverage_map_mode" ? (
-                    <div className="mt-3 flex flex-wrap gap-3">
-                      {MAP_MODE_OPTIONS.map((opt) => {
-                        const isActive = (field.value_en || "3d") === opt.value;
-                        return (
-                          <label
-                            key={opt.value}
-                            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                              isActive
-                                ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
-                                : "border-black/15 text-neutral-600 hover:bg-neutral-50"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="network_coverage_map_mode"
-                              value={opt.value}
-                              checked={isActive}
-                              onChange={() => {
-                                updateField(field.block_key, "value_en", opt.value);
-                                updateField(field.block_key, "value_km", opt.value);
-                              }}
-                              className="sr-only"
+                    {modeToggle ? (
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {modeToggle.options.map((opt) => {
+                          const isActive = (field.value_en || modeToggle.options[0].value) === opt.value;
+                          return (
+                            <label
+                              key={opt.value}
+                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                isActive
+                                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                                  : "border-black/15 text-neutral-600 hover:bg-neutral-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={field.block_key}
+                                value={opt.value}
+                                checked={isActive}
+                                onChange={() => {
+                                  updateField(field.block_key, "value_en", opt.value);
+                                  updateField(field.block_key, "value_km", opt.value);
+                                }}
+                                className="sr-only"
+                              />
+                              {opt.label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : field.block_key.endsWith("_video_url") ? (
+                      <div className="mt-3 flex flex-col gap-3">
+                        {field.image_url ? (
+                          toEmbedUrl(field.image_url) ? (
+                            <iframe
+                              src={toEmbedUrl(field.image_url)}
+                              title={field.label}
+                              className="aspect-video w-full max-w-md rounded-lg border border-black/10"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
                             />
-                            {opt.label}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  ) : field.block_key.endsWith("_video_url") ? (
-                    <div className="mt-3 flex flex-col gap-3">
-                      {field.image_url ? (
-                        toEmbedUrl(field.image_url) ? (
-                          <iframe
-                            src={toEmbedUrl(field.image_url)}
-                            title={field.label}
-                            className="aspect-video w-full max-w-md rounded-lg border border-black/10"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
+                          ) : (
+                            <video
+                              src={field.image_url}
+                              controls
+                              className="aspect-video w-full max-w-md rounded-lg border border-black/10 bg-black"
+                            />
+                          )
                         ) : (
-                          <video
-                            src={field.image_url}
-                            controls
-                            className="aspect-video w-full max-w-md rounded-lg border border-black/10 bg-black"
-                          />
-                        )
-                      ) : (
-                        <div className="flex aspect-video w-full max-w-md items-center justify-center rounded-lg border border-dashed border-black/15 bg-neutral-50 text-xs text-neutral-400">
-                          No video set yet
-                        </div>
-                      )}
+                          <div className="flex aspect-video w-full max-w-md items-center justify-center rounded-lg border border-dashed border-black/15 bg-neutral-50 text-xs text-neutral-400">
+                            No video set yet
+                          </div>
+                        )}
 
-                      <input
-                        value={field.image_url || ""}
-                        onChange={(e) => updateField(field.block_key, "image_url", e.target.value)}
-                        placeholder="Paste a YouTube, Vimeo, or direct video URL"
-                        className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => triggerVideoUpload(field.block_key)}
-                        disabled={videoUploading}
-                        className="flex w-fit items-center gap-1.5 rounded-lg border border-black/15 px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-60"
-                      >
-                        <Video className="h-4 w-4" />
-                        {videoUploading ? "Uploading..." : "Upload Video File (max 50MB)"}
-                      </button>
-                    </div>
-                  ) : field.block_type === "image" ? (
-                    <div className="mt-3 flex items-center gap-4">
-                      {field.image_url && (
-                        <img
-                          src={
-                            field.image_url.startsWith("http")
-                              ? field.image_url
-                              : `${API_URL}${field.image_url}`
-                          }
-                          alt=""
-                          className="h-20 w-32 rounded-lg object-cover"
+                        <input
+                          value={field.image_url || ""}
+                          onChange={(e) => updateField(field.block_key, "image_url", e.target.value)}
+                          placeholder="Paste a YouTube, Vimeo, or direct video URL"
+                          className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
                         />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => triggerUpload(field.block_key)}
-                        className="flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50"
-                      >
-                        <Upload className="h-4 w-4" /> Replace Image
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      {field.block_type === "richtext" ? (
-                        <>
-                          <textarea
-                            rows={3}
-                            value={field.value_en || ""}
-                            onChange={(e) =>
-                              updateField(
-                                field.block_key,
-                                "value_en",
-                                e.target.value,
-                              )
+
+                        <button
+                          type="button"
+                          onClick={() => triggerVideoUpload(field.block_key)}
+                          disabled={videoUploading}
+                          className="flex w-fit items-center gap-1.5 rounded-lg border border-black/15 px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-60"
+                        >
+                          <Video className="h-4 w-4" />
+                          {videoUploading ? "Uploading..." : "Upload Video File (max 50MB)"}
+                        </button>
+                      </div>
+                    ) : field.block_type === "image" ? (
+                      <div className="mt-3 flex items-center gap-4">
+                        {field.image_url && (
+                          <img
+                            src={
+                              field.image_url.startsWith("http")
+                                ? field.image_url
+                                : `${API_URL}${field.image_url}`
                             }
-                            placeholder="English"
-                            className="resize-none rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                            alt=""
+                            className="h-20 w-32 rounded-lg object-cover"
                           />
-                          <textarea
-                            rows={3}
-                            value={field.value_km || ""}
-                            onChange={(e) =>
-                              updateField(
-                                field.block_key,
-                                "value_km",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Khmer"
-                            className="resize-none rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <input
-                            value={field.value_en || ""}
-                            onChange={(e) =>
-                              updateField(
-                                field.block_key,
-                                "value_en",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="English"
-                            className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                          />
-                          <input
-                            value={field.value_km || ""}
-                            onChange={(e) =>
-                              updateField(
-                                field.block_key,
-                                "value_km",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Khmer"
-                            className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                          />
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => triggerUpload(field.block_key)}
+                          className="flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50"
+                        >
+                          <Upload className="h-4 w-4" /> Replace Image
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {field.block_type === "richtext" ? (
+                          <>
+                            <textarea
+                              rows={3}
+                              value={field.value_en || ""}
+                              onChange={(e) =>
+                                updateField(
+                                  field.block_key,
+                                  "value_en",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="English"
+                              className="resize-none rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                            />
+                            <textarea
+                              rows={3}
+                              value={field.value_km || ""}
+                              onChange={(e) =>
+                                updateField(
+                                  field.block_key,
+                                  "value_km",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Khmer"
+                              className="resize-none rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              value={field.value_en || ""}
+                              onChange={(e) =>
+                                updateField(
+                                  field.block_key,
+                                  "value_en",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="English"
+                              className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                            />
+                            <input
+                              value={field.value_km || ""}
+                              onChange={(e) =>
+                                updateField(
+                                  field.block_key,
+                                  "value_km",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Khmer"
+                              className="rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                            />
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               <div className="flex items-center justify-end gap-3 border-t border-black/10 pt-4">
                 {saved && (
