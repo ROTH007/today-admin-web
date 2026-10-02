@@ -35,6 +35,14 @@ function toEmbedUrl(url) {
   return null;
 }
 
+// Fixed two-option toggle used only by the "network_coverage_map_mode"
+// field -- it's stored as a plain text block ("3d" | "image") but needs a
+// radio-button UI instead of the generic EN/KM text inputs.
+const MAP_MODE_OPTIONS = [
+  { value: "3d", label: "3D Map (interactive)" },
+  { value: "image", label: "Upload Image" },
+];
+
 export function SectionEditPage() {
   const { pageKey, blockKey } = useParams();
   const { apiFetch, token } = useAuth();
@@ -215,7 +223,36 @@ export function SectionEditPage() {
                     {field.label}
                   </p>
 
-                  {field.block_key.endsWith("_video_url") ? (
+                  {field.block_key === "network_coverage_map_mode" ? (
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      {MAP_MODE_OPTIONS.map((opt) => {
+                        const isActive = (field.value_en || "3d") === opt.value;
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                              isActive
+                                ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                                : "border-black/15 text-neutral-600 hover:bg-neutral-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="network_coverage_map_mode"
+                              value={opt.value}
+                              checked={isActive}
+                              onChange={() => {
+                                updateField(field.block_key, "value_en", opt.value);
+                                updateField(field.block_key, "value_km", opt.value);
+                              }}
+                              className="sr-only"
+                            />
+                            {opt.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : field.block_key.endsWith("_video_url") ? (
                     <div className="mt-3 flex flex-col gap-3">
                       {field.image_url ? (
                         toEmbedUrl(field.image_url) ? (
